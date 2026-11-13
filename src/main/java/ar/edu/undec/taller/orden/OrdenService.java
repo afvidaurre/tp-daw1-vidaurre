@@ -101,6 +101,19 @@ public class OrdenService {
                 .toList();
     }
 
+    public List<OrdenResponse> historialPorPatente(String patente) {
+        if (!vehiculoRepository.existsByPatente(patente)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Vehículo no existe");
+        }
+
+        return ordenRepository
+                .findByVehiculo_PatenteOrderByIdDesc(patente)
+                .stream()
+                .map(this::aResponse)
+                .toList();
+    }
+
     private Orden buscarEntidad(Long id) {
         return ordenRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(

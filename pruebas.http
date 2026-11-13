@@ -126,3 +126,6 @@ DELETE {{base}}/clientes/{{clienteId}}
 
 ### Facturación mensual
 GET {{base}}/ordenes/facturacion?mes=2026-11
+
+### Historial por patente
+GET {{base}}/vehiculos/patente/ABC123/historial

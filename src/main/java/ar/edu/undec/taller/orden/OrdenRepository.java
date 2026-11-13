@@ -21,4 +21,6 @@ public interface OrdenRepository extends JpaRepository<Orden, Long> {
             EstadoOrden estado,
             LocalDateTime desde,
             LocalDateTime hasta);
+
+    List<Orden> findByVehiculo_PatenteOrderByIdDesc(String patente);
 }

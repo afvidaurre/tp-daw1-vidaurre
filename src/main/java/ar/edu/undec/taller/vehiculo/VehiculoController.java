@@ -6,20 +6,31 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import ar.edu.undec.taller.orden.OrdenResponse;
+import ar.edu.undec.taller.orden.OrdenService;
 
 @RestController
 @RequestMapping("/api/vehiculos")
 public class VehiculoController {
 
     private final VehiculoService vehiculoService;
-
-    public VehiculoController(VehiculoService vehiculoService) {
+    private final OrdenService ordenService;
+    public VehiculoController(
+            VehiculoService vehiculoService,
+            OrdenService ordenService) {
         this.vehiculoService = vehiculoService;
+        this.ordenService = ordenService;
     }
 
     @GetMapping
     public List<VehiculoResponse> listar() {
         return vehiculoService.listar();
+    }
+
+    @GetMapping("/patente/{patente}/historial")
+    public List<OrdenResponse> historialPorPatente(
+            @PathVariable String patente) {
+        return ordenService.historialPorPatente(patente);
     }
 
     @GetMapping("/{id}")
