@@ -1,32 +1,128 @@
-### Archivo de pruebas · reemplazá las rutas por las de tu enunciado
-### En IntelliJ: abrí este archivo y tocá el ▶ verde de cada petición.
-
 @base = http://localhost:8080/api
+@clienteId = 1
+@vehiculoId = 1
+@ordenId = 1
 
-### Listar
-GET {{base}}/recursos
-
-### Crear
-POST {{base}}/recursos
+### 1. Crear cliente (esperado: 201)
+POST {{base}}/clientes
 Content-Type: application/json
 
 {
-  "campo1": "valor",
-  "campo2": "valor",
-  "campo3": "valor"
+  "nombre": "Ana",
+  "telefono": "3804123456"
 }
 
-### Buscar por id
-GET {{base}}/recursos/1
+### 2. Listar clientes (esperado: 200)
+GET {{base}}/clientes
 
-### Error de validación (400)
-POST {{base}}/recursos
+### 3. Buscar cliente por id (esperado: 200)
+GET {{base}}/clientes/{{clienteId}}
+
+### 4. Validar cliente sin nombre (esperado: 400 ProblemDetail)
+POST {{base}}/clientes
 Content-Type: application/json
 
-{ "campo1": "" }
+{
+  "nombre": "",
+  "telefono": "3804123456"
+}
 
-### Cambiar estado
-PATCH {{base}}/otro-recurso/1/estado
+### 5. Crear vehículo (esperado: 201)
+POST {{base}}/vehiculos
 Content-Type: application/json
 
-{ "estado": "OTRO_ESTADO" }
+{
+  "patente": "ABC123",
+  "marca": "Toyota",
+  "modelo": "Etios",
+  "clienteId": {{clienteId}}
+}
+
+### 6. Listar vehículos (esperado: 200)
+GET {{base}}/vehiculos
+
+### 7. Buscar vehículo por id (esperado: 200)
+GET {{base}}/vehiculos/{{vehiculoId}}
+
+### 8. Vehículos del cliente (esperado: 200)
+GET {{base}}/clientes/{{clienteId}}/vehiculos
+
+### 9. Repetir patente (esperado: 409 ProblemDetail)
+POST {{base}}/vehiculos
+Content-Type: application/json
+
+{
+  "patente": "ABC123",
+  "marca": "Fiat",
+  "modelo": "Cronos",
+  "clienteId": {{clienteId}}
+}
+
+### 10. Crear orden (esperado: 201, estado INGRESADO)
+POST {{base}}/ordenes
+Content-Type: application/json
+
+{
+  "vehiculoId": {{vehiculoId}},
+  "descripcion": "Cambio de aceite"
+}
+
+### 11. Intentar segunda orden abierta para el mismo vehículo (esperado: 409)
+POST {{base}}/ordenes
+Content-Type: application/json
+
+{
+  "vehiculoId": {{vehiculoId}},
+  "descripcion": "Revisión de frenos"
+}
+
+### 12. Listar órdenes (esperado: 200)
+GET {{base}}/ordenes
+
+### 13. Filtrar órdenes por estado (esperado: 200)
+GET {{base}}/ordenes?estado=INGRESADO
+
+### 14. Buscar orden por id (esperado: 200)
+GET {{base}}/ordenes/{{ordenId}}
+
+### 15. Cargar costo final (esperado: 200)
+PUT {{base}}/ordenes/{{ordenId}}
+Content-Type: application/json
+
+{
+  "descripcion": "Cambio de aceite y filtro",
+  "costoFinal": 35000.00
+}
+
+### 16. INGRESADO -> EN_REPARACION (esperado: 200)
+PATCH {{base}}/ordenes/{{ordenId}}/estado
+Content-Type: application/json
+
+{
+  "estado": "EN_REPARACION"
+}
+
+### 17. EN_REPARACION -> TERMINADO (esperado: 200)
+PATCH {{base}}/ordenes/{{ordenId}}/estado
+Content-Type: application/json
+
+{
+  "estado": "TERMINADO"
+}
+
+### 18. TERMINADO -> ENTREGADO (esperado: 200)
+PATCH {{base}}/ordenes/{{ordenId}}/estado
+Content-Type: application/json
+
+{
+  "estado": "ENTREGADO"
+}
+
+### 19. Borrar vehículo con orden asociada (esperado: 409)
+DELETE {{base}}/vehiculos/{{vehiculoId}}
+
+### 20. Borrar cliente con vehículo asociado (esperado: 409)
+DELETE {{base}}/clientes/{{clienteId}}
+
+### Facturación mensual
+GET {{base}}/ordenes/facturacion?mes=2026-11

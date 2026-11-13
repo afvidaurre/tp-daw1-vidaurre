@@ -5,8 +5,11 @@ import ar.edu.undec.taller.vehiculo.VehiculoRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
+import java.time.LocalDateTime;
 import java.util.List;
+import java.math.BigDecimal;
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 
 @Service
 public class OrdenService {
@@ -79,8 +82,12 @@ public class OrdenService {
         }
 
         orden.setEstado(nuevoEstado);
+        if (nuevoEstado == EstadoOrden.ENTREGADO) {
+            orden.setFechaEntrega(LocalDateTime.now());
+        }
         return aResponse(ordenRepository.save(orden));
     }
+
 
     public void eliminar(Long id) {
         Orden orden = buscarEntidad(id);
@@ -121,5 +128,33 @@ public class OrdenService {
                 orden.getEstado(),
                 orden.getCostoFinal()
         );
+    }
+
+    public FacturacionMensualResponse facturacionMensual(String mesTexto) {
+        YearMonth mes;
+
+        try {
+            mes = YearMonth.parse(mesTexto);
+        } catch (DateTimeParseException ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El mes debe tener formato yyyy-MM");
+        }
+
+        LocalDateTime desde = mes.atDay(1).atStartOfDay();
+        LocalDateTime hasta = mes.plusMonths(1).atDay(1).atStartOfDay();
+
+        List<Orden> entregadas =
+                ordenRepository
+                        .findByEstadoAndFechaEntregaGreaterThanEqualAndFechaEntregaLessThan(
+                                EstadoOrden.ENTREGADO,
+                                desde,
+                                hasta);
+
+        BigDecimal total = entregadas.stream()
+                .map(Orden::getCostoFinal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return new FacturacionMensualResponse(entregadas.size(), total);
     }
 }

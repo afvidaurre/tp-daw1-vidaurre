@@ -4,7 +4,7 @@ import ar.edu.undec.taller.vehiculo.Vehiculo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
-
+import java.time.LocalDateTime;
 import java.math.BigDecimal;
 
 @Entity
@@ -28,7 +28,7 @@ public class Orden {
 
     @DecimalMin("0.0")
     private BigDecimal costoFinal;
-
+    private LocalDateTime fechaEntrega;
     public Orden() {
     }
 
@@ -68,7 +68,16 @@ public class Orden {
         return costoFinal;
     }
 
+
     public void setCostoFinal(BigDecimal costoFinal) {
         this.costoFinal = costoFinal;
+    }
+
+    public LocalDateTime getFechaEntrega() {
+        return fechaEntrega;
+    }
+
+    public void setFechaEntrega(LocalDateTime fechaEntrega) {
+        this.fechaEntrega = fechaEntrega;
     }
 }

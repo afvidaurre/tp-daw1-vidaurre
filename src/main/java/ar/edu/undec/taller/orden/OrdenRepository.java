@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;
 import java.util.List;
+import java.time.LocalDateTime;
 
 public interface OrdenRepository extends JpaRepository<Orden, Long> {
 
@@ -16,4 +17,8 @@ public interface OrdenRepository extends JpaRepository<Orden, Long> {
     List<Orden> findByVehiculo_Id(Long vehiculoId);
 
     boolean existsByVehiculo_Id(Long vehiculoId);
+    List<Orden> findByEstadoAndFechaEntregaGreaterThanEqualAndFechaEntregaLessThan(
+            EstadoOrden estado,
+            LocalDateTime desde,
+            LocalDateTime hasta);
 }

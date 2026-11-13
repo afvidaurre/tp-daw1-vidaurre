@@ -23,6 +23,12 @@ public class OrdenController {
         return ordenService.listar(estado);
     }
 
+    @GetMapping("/facturacion")
+    public FacturacionMensualResponse facturacionMensual(
+            @RequestParam String mes) {
+        return ordenService.facturacionMensual(mes);
+    }
+
     @GetMapping("/{id}")
     public OrdenResponse buscarPorId(@PathVariable Long id) {
         return ordenService.buscarPorId(id);
