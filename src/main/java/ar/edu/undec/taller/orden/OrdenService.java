@@ -1,5 +1,6 @@
 package ar.edu.undec.taller.orden;
 
+import ar.edu.undec.taller.repuesto.RepuestoService;
 import ar.edu.undec.taller.vehiculo.Vehiculo;
 import ar.edu.undec.taller.vehiculo.VehiculoRepository;
 import org.springframework.http.HttpStatus;
@@ -10,18 +11,25 @@ import java.util.List;
 import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
+import ar.edu.undec.taller.repuesto.Repuesto;
+import ar.edu.undec.taller.repuesto.RepuestoRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class OrdenService {
 
     private final OrdenRepository ordenRepository;
     private final VehiculoRepository vehiculoRepository;
-
+    private final OrdenRepuestoRepository ordenRepuestoRepository;
+    private final RepuestoRepository repuestoRepository;
     public OrdenService(
             OrdenRepository ordenRepository,
-            VehiculoRepository vehiculoRepository) {
+            VehiculoRepository vehiculoRepository,
+            OrdenRepuestoRepository ordenRepuestoRepository, RepuestoRepository repuestoRepository) {
         this.ordenRepository = ordenRepository;
         this.vehiculoRepository = vehiculoRepository;
+        this.ordenRepuestoRepository = ordenRepuestoRepository;
+        this.repuestoRepository = repuestoRepository;
     }
 
     public List<OrdenResponse> listar(EstadoOrden estado) {
@@ -62,6 +70,15 @@ public class OrdenService {
 
     public OrdenResponse actualizar(Long id, ActualizarOrdenRequest datos) {
         Orden orden = buscarEntidad(id);
+
+        if (datos.costoFinal() != null
+                && datos.costoFinal().compareTo(
+                calcularCostoRepuestos(id)) < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "costoFinal no puede ser menor que costoRepuestos");
+        }
+
         orden.setDescripcion(datos.descripcion());
         orden.setCostoFinal(datos.costoFinal());
         return aResponse(ordenRepository.save(orden));
@@ -139,8 +156,17 @@ public class OrdenService {
                 orden.getVehiculo().getId(),
                 orden.getDescripcion(),
                 orden.getEstado(),
-                orden.getCostoFinal()
+                orden.getCostoFinal(),
+                calcularCostoRepuestos(orden.getId())
         );
+    }
+
+    private BigDecimal calcularCostoRepuestos(Long ordenId) {
+        return ordenRepuestoRepository.findByOrden_Id(ordenId)
+                .stream()
+                .map(detalle -> detalle.getRepuesto().getPrecio()
+                        .multiply(BigDecimal.valueOf(detalle.getCantidad())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public FacturacionMensualResponse facturacionMensual(String mesTexto) {
@@ -169,5 +195,42 @@ public class OrdenService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new FacturacionMensualResponse(entregadas.size(), total);
+    }
+    @Transactional
+    public OrdenResponse agregarRepuesto(
+            Long ordenId,
+            AgregarRepuestoRequest datos) {
+        Orden orden = buscarEntidad(ordenId);
+
+        Repuesto repuesto = repuestoRepository.findById(datos.repuestoId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Repuesto no existe"));
+
+        if (repuesto.getStock() < datos.cantidad()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Stock insuficiente");
+        }
+
+        BigDecimal costoNuevo = calcularCostoRepuestos(ordenId).add(
+                repuesto.getPrecio()
+                        .multiply(BigDecimal.valueOf(datos.cantidad())));
+
+        if (orden.getCostoFinal() != null
+                && orden.getCostoFinal().compareTo(costoNuevo) < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "costoFinal no puede ser menor que costoRepuestos");
+        }
+
+        repuesto.setStock(repuesto.getStock() - datos.cantidad());
+        repuestoRepository.save(repuesto);
+
+        OrdenRepuesto detalle = new OrdenRepuesto();
+        detalle.setOrden(orden);
+        detalle.setRepuesto(repuesto);
+        detalle.setCantidad(datos.cantidad());
+        ordenRepuestoRepository.save(detalle);
+
+        return aResponse(orden);
     }
 }

@@ -42,6 +42,15 @@ public class OrdenController {
         return ResponseEntity.created(location).body(creada);
     }
 
+    @PostMapping("/{id}/repuestos")
+    public ResponseEntity<OrdenResponse> agregarRepuesto(
+            @PathVariable Long id,
+            @Valid @RequestBody AgregarRepuestoRequest datos) {
+        OrdenResponse actualizada = ordenService.agregarRepuesto(id, datos);
+        URI location = URI.create("/api/ordenes/" + id);
+        return ResponseEntity.created(location).body(actualizada);
+    }
+
     @PutMapping("/{id}")
     public OrdenResponse actualizar(
             @PathVariable Long id,

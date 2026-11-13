@@ -7,6 +7,7 @@ public record OrdenResponse(
         Long vehiculoId,
         String descripcion,
         EstadoOrden estado,
-        BigDecimal costoFinal
-) {
+        BigDecimal costoFinal,
+        BigDecimal costoRepuestos) {
+
 }

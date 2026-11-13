@@ -129,3 +129,43 @@ GET {{base}}/ordenes/facturacion?mes=2026-11
 
 ### Historial por patente
 GET {{base}}/vehiculos/patente/ABC123/historial
+
+### Crear repuesto (esperado: 201)
+POST {{base}}/repuestos
+Content-Type: application/json
+
+{
+  "nombre": "Filtro de aceite",
+  "precio": 5000.00,
+  "stock": 10
+}
+
+### Agregar 2 unidades a la orden (esperado: 201)
+POST {{base}}/ordenes/{{ordenId}}/repuestos
+Content-Type: application/json
+
+{
+  "repuestoId": 1,
+  "cantidad": 2
+}
+
+### Consultar stock (esperado: 200; stock = 8)
+GET {{base}}/repuestos/1
+
+### Intentar agregar más unidades que las disponibles (esperado: 409)
+POST {{base}}/ordenes/{{ordenId}}/repuestos
+Content-Type: application/json
+
+{
+  "repuestoId": 1,
+  "cantidad": 99
+}
+
+### Intentar cargar un costoFinal menor que costoRepuestos (esperado: 400)
+PUT {{base}}/ordenes/{{ordenId}}
+Content-Type: application/json
+
+{
+  "descripcion": "Cambio de aceite y filtro",
+  "costoFinal": 5000.00
+}
